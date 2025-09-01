@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "mediaboard-backend"
+version = "0.1.0"
+description = "MediaBoard AI backend (FastAPI, Postgres, Langraph engine)"
+authors = ["Dev <dev@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.95.2"
+uvicorn = {extras = ["standard"], version = "^0.22.0"}
+sqlalchemy = "^1.5.0"
+asyncpg = "^0.27.0"
+alembic = "^1.11.1"
+python-dotenv = "^1.0.0"
+passlib[bcrypt] = "^1.7.5"
+pyjwt = "^2.8.0"
+httpx = "^0.24.1"
+authlib = "^1.2.0"
+langraph = "0.0.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.3.2"
