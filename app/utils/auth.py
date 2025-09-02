@@ -1,6 +1,21 @@
 from fastapi import Header, HTTPException, status, Depends
-import jwt
+from jose import jwt
+from datetime import datetime, timedelta
+from typing import Dict, Any
 from app.core.config import settings
+
+
+def create_access_token(data: Dict[str, Any], expires_delta: timedelta = None) -> str:
+    """Create a JWT access token"""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(hours=24)  # Default 24 hours
+    
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm="HS256")
+    return encoded_jwt
 
 
 def get_token_from_header(authorization: str | None = Header(None)) -> str:

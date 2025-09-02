@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Optional
+from pydantic_settings import BaseSettings
 
 try:
     from dotenv import load_dotenv
@@ -9,19 +10,39 @@ except Exception:
     pass
 
 
-class Settings:
-    DATABASE_URL: str
-    SECRET_KEY: str
-    GOOGLE_CLIENT_ID: Optional[str]
-    GOOGLE_CLIENT_SECRET: Optional[str]
-    FRONTEND_ORIGIN: str
-
-    def __init__(self):
-        self.DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql+asyncpg://user:pass@localhost:5432/mediaboard')
-        self.SECRET_KEY = os.environ.get('SECRET_KEY', 'replace-me-with-secure-random')
-        self.GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
-        self.GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
-        self.FRONTEND_ORIGIN = os.environ.get('FRONTEND_ORIGIN', 'http://localhost:3000')
+class Settings(BaseSettings):
+    # Database
+    DATABASE_URL: str = "postgresql+asyncpg://username:password@localhost:5432/mediaboard_ai"
+    
+    # Security
+    SECRET_KEY: str = "your-super-secret-key-here-generate-a-random-one"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/auth/google/callback"
+    
+    # Frontend
+    FRONTEND_ORIGIN: str = "http://localhost:3000"
+    
+    # AI Services
+    OPENAI_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
+    
+    # File Storage
+    UPLOAD_DIR: str = "./uploads"
+    MAX_FILE_SIZE: int = 100000000  # 100MB
+    
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379"
+    
+    # Environment
+    ENVIRONMENT: str = "development"
+    
+    class Config:
+        env_file = ".env"
 
 
 settings = Settings()
