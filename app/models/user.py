@@ -32,7 +32,8 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     last_login = Column(DateTime(timezone=True), nullable=True)
 
-    # Relationships (commented out until models are created)
+    # Relationships
+    boards = relationship("Board", back_populates="user", cascade="all, delete-orphan")
     # projects = relationship("Project", back_populates="user")
     # media_files = relationship("MediaFile", back_populates="user")
 
