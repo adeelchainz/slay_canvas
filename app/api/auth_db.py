@@ -1,6 +1,6 @@
 """
 Authentication API with database integration
-Handles Google OAuth login and user storage
+Handles Google OAuth login, manual registration, login, and password reset
 """
 from fastapi import APIRouter, HTTPException, Depends, Request, Response
 from fastapi.responses import RedirectResponse, JSONResponse
@@ -13,8 +13,12 @@ from typing import Dict, Any
 from app.core.config import settings
 from app.db.session import get_async_session
 from app.services.user_service import UserService
-from app.schemas.user import UserInDB
-from app.utils.auth import create_access_token
+from app.schemas.user import (
+    UserInDB, UserPublic, UserRegistration, UserLogin, 
+    PasswordResetRequest, PasswordResetVerify, AuthResponse, MessageResponse
+)
+from app.utils.auth import create_access_token, get_current_user_id
+from app.utils.security import otp_manager, email_service, password_hasher
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -128,7 +132,9 @@ async def google_callback(
                     "email": user.email,
                     "name": user.name,
                     "avatar_url": user.avatar_url,
-                    "is_active": user.is_active
+                    "is_active": user.is_active,
+                    "subscription_plan": user.subscription_plan,
+                    "created_at": user.created_at.isoformat()
                 },
                 "access_token": jwt_token,
                 "token_type": "bearer"
@@ -139,20 +145,204 @@ async def google_callback(
         logger.error(f"OAuth callback error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Authentication failed: {str(e)}")
 
-@router.get("/me")
-async def get_current_user(
+# Manual Registration and Login Endpoints
+
+@router.post("/register", response_model=AuthResponse)
+async def register_user(
+    user_data: UserRegistration,
     db: AsyncSession = Depends(get_async_session),
     user_service: UserService = Depends(get_user_service)
 ):
-    """Get current user profile (requires authentication)"""
-    # This endpoint would normally require JWT authentication
-    # For now, it's a placeholder for testing
-    return {"message": "This endpoint requires authentication"}
+    """Register a new user with email and password"""
+    
+    # Validate passwords match
+    if not user_data.passwords_match():
+        raise HTTPException(status_code=400, detail="Passwords do not match")
+    
+    # Validate password strength
+    is_strong, errors = password_hasher.validate_password_strength(user_data.password)
+    if not is_strong:
+        raise HTTPException(status_code=400, detail=f"Password requirements not met: {', '.join(errors)}")
+    
+    try:
+        # Create user
+        user = await user_service.register_user(db, user_data)
+        if not user:
+            raise HTTPException(status_code=400, detail="User with this email already exists")
+        
+        # Create JWT token
+        jwt_token = create_access_token(data={"sub": str(user.id), "email": user.email})
+        
+        # Convert user to UserPublic
+        user_public = UserPublic(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            avatar_url=user.avatar_url,
+            is_active=user.is_active,
+            subscription_plan=user.subscription_plan,
+            created_at=user.created_at
+        )
+        
+        return AuthResponse(
+            message="Registration successful",
+            user=user_public,
+            access_token=jwt_token,
+            token_type="bearer"
+        )
+        
+    except Exception as e:
+        logger.error(f"Registration error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Registration failed")
 
-@router.post("/logout")
+
+@router.post("/login", response_model=AuthResponse)
+async def login_user(
+    user_data: UserLogin,
+    db: AsyncSession = Depends(get_async_session),
+    user_service: UserService = Depends(get_user_service)
+):
+    """Login user with email and password"""
+    
+    try:
+        # Authenticate user
+        user = await user_service.authenticate_user(db, user_data.email, user_data.password)
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        # Create JWT token
+        jwt_token = create_access_token(data={"sub": str(user.id), "email": user.email})
+        
+        # Convert user to UserPublic
+        user_public = UserPublic(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            avatar_url=user.avatar_url,
+            is_active=user.is_active,
+            subscription_plan=user.subscription_plan,
+            created_at=user.created_at
+        )
+        
+        return AuthResponse(
+            message="Login successful",
+            user=user_public,
+            access_token=jwt_token,
+            token_type="bearer"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Login failed")
+
+
+# Password Reset Endpoints
+
+@router.post("/forgot-password", response_model=MessageResponse)
+async def forgot_password(
+    request_data: PasswordResetRequest,
+    db: AsyncSession = Depends(get_async_session),
+    user_service: UserService = Depends(get_user_service)
+):
+    """Send OTP to user's email for password reset"""
+    
+    try:
+        # Check if user exists
+        user = await user_service.get_user_by_email(db, request_data.email)
+        if not user:
+            # Don't reveal if user exists or not for security
+            return MessageResponse(message="If this email is registered, you will receive an OTP shortly")
+        
+        # Generate and send OTP
+        otp = otp_manager.generate_otp(request_data.email)
+        email_sent = await email_service.send_otp_email(request_data.email, otp)
+        
+        if not email_sent:
+            logger.error(f"Failed to send OTP email to {request_data.email}")
+            # Still return success message for security
+        
+        return MessageResponse(message="If this email is registered, you will receive an OTP shortly")
+        
+    except Exception as e:
+        logger.error(f"Forgot password error: {str(e)}")
+        return MessageResponse(message="If this email is registered, you will receive an OTP shortly")
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+async def reset_password(
+    reset_data: PasswordResetVerify,
+    db: AsyncSession = Depends(get_async_session),
+    user_service: UserService = Depends(get_user_service)
+):
+    """Reset password with OTP verification"""
+    
+    # Validate passwords match
+    if not reset_data.passwords_match():
+        raise HTTPException(status_code=400, detail="Passwords do not match")
+    
+    # Validate password strength
+    is_strong, errors = password_hasher.validate_password_strength(reset_data.new_password)
+    if not is_strong:
+        raise HTTPException(status_code=400, detail=f"Password requirements not met: {', '.join(errors)}")
+    
+    try:
+        # Verify OTP
+        if not otp_manager.verify_otp(reset_data.email, reset_data.otp):
+            raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+        
+        # Reset password
+        success = await user_service.reset_password(db, reset_data.email, reset_data.new_password)
+        if not success:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return MessageResponse(message="Password reset successfully")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Password reset error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Password reset failed")
+
+
+@router.get("/me", response_model=UserPublic)
+async def get_current_user(
+    db: AsyncSession = Depends(get_async_session),
+    user_service: UserService = Depends(get_user_service),
+    current_user_id: int = Depends(get_current_user_id)
+):
+    """Get current user profile (requires authentication)"""
+    
+    try:
+        user = await user_service.get_user_by_id(db, current_user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return UserPublic(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            avatar_url=user.avatar_url,
+            is_active=user.is_active,
+            subscription_plan=user.subscription_plan,
+            created_at=user.created_at
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Get current user error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to get user profile")
+
+
+@router.post("/logout", response_model=MessageResponse)
 async def logout():
     """Logout user"""
-    return {"message": "Logged out successfully"}
+    # Since we're using stateless JWT tokens, logout is handled on the client side
+    # In a production app, you might want to blacklist tokens
+    return MessageResponse(message="Logged out successfully")
+
 
 # Health check endpoint
 @router.get("/health")
@@ -160,5 +350,11 @@ async def auth_health():
     """Health check for auth service"""
     return {
         "status": "healthy",
-        "google_oauth_configured": bool(settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET)
+        "google_oauth_configured": bool(settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET),
+        "email_service_configured": bool(email_service.smtp_username and email_service.smtp_password),
+        "features": {
+            "oauth_login": True,
+            "manual_registration": True,
+            "password_reset": True
+        }
     }

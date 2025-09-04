@@ -1,5 +1,5 @@
 """
-AI Agents for MediaBoard AI using LangGraph
+AI Agents for Slay Canvas using LangGraph
 """
 
 from typing import Dict, Any, List, Optional

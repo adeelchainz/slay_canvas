@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./uploads"
     MAX_FILE_SIZE: int = 100000000  # 100MB
     
+    # Email Configuration
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_SERVER: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
     

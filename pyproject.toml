@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "mediaboard-backend"
 version = "0.1.0"
-description = "MediaBoard AI backend (FastAPI, Postgres, Langraph engine)"
+description = "Slay Canvas backend (FastAPI, Postgres, Langraph engine)"
 authors = ["Dev <dev@example.com>"]
 
 [tool.poetry.dependencies]

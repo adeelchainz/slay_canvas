@@ -32,9 +32,9 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     last_login = Column(DateTime(timezone=True), nullable=True)
 
-    # Relationships
-    projects = relationship("Project", back_populates="user")
-    media_files = relationship("MediaFile", back_populates="user")
+    # Relationships (commented out until models are created)
+    # projects = relationship("Project", back_populates="user")
+    # media_files = relationship("MediaFile", back_populates="user")
 
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}')>"

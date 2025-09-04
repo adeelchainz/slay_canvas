@@ -1,7 +1,7 @@
-# MediaBoard AI - Windows Setup Script
-# This script helps set up the MediaBoard AI application on Windows
+# Slay Canvas - Windows Setup Script
+# This script helps set up the Slay Canvas application on Windows
 
-Write-Host "🎨 MediaBoard AI - Windows Setup" -ForegroundColor Cyan
+Write-Host "🎨 Slay Canvas - Windows Setup" -ForegroundColor Cyan
 Write-Host "=" * 40 -ForegroundColor Cyan
 
 # Check Python version
@@ -128,7 +128,7 @@ Write-Host "-" * 25 -ForegroundColor Cyan
 
 $startChoice = Read-Host "Ready to start the server? (y/n)"
 if ($startChoice -eq "y") {
-    Write-Host "🚀 Starting MediaBoard AI server..." -ForegroundColor Green
+    Write-Host "🚀 Starting Slay Canvas server..." -ForegroundColor Green
     Write-Host "API will be available at: http://localhost:8000" -ForegroundColor Cyan
     Write-Host "API docs will be available at: http://localhost:8000/docs" -ForegroundColor Cyan
     Write-Host "Press Ctrl+C to stop the server" -ForegroundColor Yellow

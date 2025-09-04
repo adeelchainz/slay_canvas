@@ -2,9 +2,11 @@ from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql import func
 
 from app.models.user import User
-from app.schemas.user import UserCreate, UserUpdate
+from app.schemas.user import UserCreate, UserUpdate, UserRegistration
+from app.utils.security import password_hasher
 
 
 class UserService:
@@ -53,6 +55,8 @@ class UserService:
             if avatar_url:
                 user.avatar_url = avatar_url
             user.is_active = True
+            user.provider = "google"
+            user.last_login = func.now()
             await db.commit()
             await db.refresh(user)
             return user
@@ -66,19 +70,81 @@ class UserService:
             if avatar_url:
                 user.avatar_url = avatar_url
             user.is_active = True
+            user.provider = "google"
+            user.last_login = func.now()
             await db.commit()
             await db.refresh(user)
             return user
         
         # Create new user
-        user_data = UserCreate(
+        user = User(
             email=email,
             name=name,
             google_id=google_id,
             avatar_url=avatar_url,
-            is_active=True
+            is_active=True,
+            is_verified=True,  # OAuth users are pre-verified
+            provider="google",
+            last_login=func.now()
         )
-        return await self.create_user(db, user_data)
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        return user
+    
+    async def register_user(self, db: AsyncSession, user_data: UserRegistration) -> Optional[User]:
+        """Register a new user with email and password."""
+        # Check if user already exists
+        existing_user = await self.get_user_by_email(db, user_data.email)
+        if existing_user:
+            return None  # User already exists
+        
+        # Hash password
+        hashed_password = password_hasher.hash_password(user_data.password)
+        
+        # Create user
+        user = User(
+            email=user_data.email,
+            name=user_data.name,
+            hashed_password=hashed_password,
+            is_active=True,
+            is_verified=False,  # Email verification required
+            provider="email"
+        )
+        
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        return user
+    
+    async def authenticate_user(self, db: AsyncSession, email: str, password: str) -> Optional[User]:
+        """Authenticate user with email and password."""
+        user = await self.get_user_by_email(db, email)
+        if not user or not user.hashed_password:
+            return None
+        
+        if not password_hasher.verify_password(password, user.hashed_password):
+            return None
+        
+        if not user.is_active:
+            return None
+        
+        # Update last login
+        user.last_login = func.now()
+        await db.commit()
+        await db.refresh(user)
+        return user
+    
+    async def reset_password(self, db: AsyncSession, email: str, new_password: str) -> bool:
+        """Reset user password."""
+        user = await self.get_user_by_email(db, email)
+        if not user:
+            return False
+        
+        # Hash new password
+        user.hashed_password = password_hasher.hash_password(new_password)
+        await db.commit()
+        return True
     
     async def update_user(self, db: AsyncSession, user_id: int, user_data: UserUpdate) -> Optional[User]:
         """Update user."""

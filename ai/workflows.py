@@ -1,5 +1,5 @@
 """
-LangGraph Workflows for MediaBoard AI
+LangGraph Workflows for Slay Canvas
 """
 
 from typing import Dict, Any, List

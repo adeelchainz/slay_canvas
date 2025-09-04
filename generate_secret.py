@@ -1,5 +1,5 @@
 """
-Generate secure SECRET_KEY for MediaBoard AI
+Generate secure SECRET_KEY for Slay Canvas
 """
 
 import secrets

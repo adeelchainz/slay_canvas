@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
-    logger.info("🚀 MediaBoard AI starting up...")
+    logger.info("🚀 Slay Canvas starting up...")
     
     # Check database connection on startup
     try:
@@ -30,11 +30,11 @@ async def lifespan(app: FastAPI):
     yield
     
     # Cleanup on shutdown
-    logger.info("🛑 MediaBoard AI shutting down...")
+    logger.info("🛑 Slay Canvas shutting down...")
 
 # Create FastAPI app with lifespan
 app = FastAPI(
-    title="MediaBoard AI",
+    title="Slay Canvas",
     description="AI-powered media processing platform with LangGraph workflows",
     version="1.0.0",
     lifespan=lifespan
@@ -102,7 +102,7 @@ except Exception as e:
 async def root():
     """Root endpoint with system status"""
     return {
-        "message": "MediaBoard AI is running!",
+        "message": "Slay Canvas is running!",
         "status": "healthy",
         "version": "1.0.0",
         "features": {

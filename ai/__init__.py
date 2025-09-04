@@ -1,5 +1,5 @@
 """
-AI Package for MediaBoard AI
+AI Package for Slay Canvas
 This package contains all AI-related functionality including:
 - LangGraph workflows
 - Media processing agents

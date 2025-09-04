@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-MediaBoard AI - Startup Script
-This script helps set up and run the MediaBoard AI application
+Slay Canvas - Startup Script
+This script helps set up and run the Slay Canvas application
 """
 
 import os
@@ -119,7 +119,7 @@ async def check_database():
 
 def start_server():
     """Start the FastAPI server"""
-    print("🚀 Starting MediaBoard AI server...")
+    print("🚀 Starting Slay Canvas server...")
     
     try:
         cmd = [
@@ -160,7 +160,7 @@ def setup_database():
 
 def main():
     """Main setup and run function"""
-    print("🎨 MediaBoard AI - Setup & Run")
+    print("🎨 Slay Canvas - Setup & Run")
     print("=" * 40)
     
     # Check Python version

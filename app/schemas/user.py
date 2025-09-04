@@ -50,7 +50,7 @@ class User(UserInDB):
 class UserRead(BaseModel):
     id: int
     email: EmailStr
-    full_name: str
+    name: str  # Changed from full_name to name
     is_active: bool
     is_verified: bool
     avatar_url: Optional[str]
@@ -68,7 +68,7 @@ class UserRead(BaseModel):
 class UserPublic(BaseModel):
     id: int
     email: EmailStr
-    full_name: str
+    name: str  # Changed from full_name to name
     avatar_url: Optional[str]
     is_active: bool
     subscription_plan: str
@@ -89,10 +89,40 @@ class GoogleUserInfo(BaseModel):
 
 class OAuthUserCreate(BaseModel):
     email: EmailStr
-    full_name: str
+    name: str  # Changed from full_name to name
     google_id: Optional[str] = None
     avatar_url: Optional[str] = None
     provider: str = "google"
+
+
+# Manual Registration/Login schemas
+class UserRegistration(BaseModel):
+    email: EmailStr
+    name: str
+    password: str
+    confirm_password: str
+
+    def passwords_match(self):
+        return self.password == self.confirm_password
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetVerify(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str
+    confirm_password: str
+
+    def passwords_match(self):
+        return self.new_password == self.confirm_password
 
 
 # Authentication response schemas
@@ -106,3 +136,14 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
     user_id: Optional[int] = None
+
+
+class AuthResponse(BaseModel):
+    message: str
+    user: UserPublic
+    access_token: str
+    token_type: str = "bearer"
+
+
+class MessageResponse(BaseModel):
+    message: str

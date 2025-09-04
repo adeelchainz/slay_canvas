@@ -1,4 +1,4 @@
-# MediaBoard AI - Collaborative AI-Powered SaaS Platform
+# Slay Canvas - Collaborative AI-Powered SaaS Platform
 
 A modern, scalable multimedia workflow platform that integrates AI-powered transcription, analysis, and content generation with real-time collaboration features.
 

@@ -7,7 +7,7 @@ from app.core.config import settings
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="MediaBoard AI - Backend",
+        title="Slay Canvas - Backend",
         description="AI-powered collaborative multimedia platform",
         version="1.0.0",
         docs_url="/docs",
@@ -31,7 +31,7 @@ def create_app() -> FastAPI:
     async def health_check():
         return {
             "status": "healthy",
-            "message": "MediaBoard AI Backend is running",
+            "message": "Slay Canvas Backend is running",
             "environment": settings.ENVIRONMENT
         }
     

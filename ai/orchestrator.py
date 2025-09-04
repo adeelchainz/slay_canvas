@@ -1,5 +1,5 @@
 """
-AI Orchestrator for MediaBoard AI
+AI Orchestrator for Slay Canvas
 Coordinates all AI workflows and provides high-level interface
 """
 
