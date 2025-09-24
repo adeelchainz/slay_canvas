@@ -3,26 +3,23 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 
 
-# Shared properties
 class AssetBase(BaseModel):
-    url: Optional[HttpUrl] = None                # link (social, external, etc.)
-    asset_metadata: Optional[Dict[str, Any]] = {}  # flexible extra info
+    url: Optional[HttpUrl] = None
+    asset_metadata: Optional[Dict[str, Any]] = {}
     is_active: Optional[bool] = True
 
 
-# Input schema for creating a social asset
 class AssetCreate(AssetBase):
-    pass   # workspace_id comes from path, type is forced = "social"
+    content: Optional[str] = None   # <-- added for texts
 
 
-# Input schema for updates
 class AssetUpdate(BaseModel):
     url: Optional[HttpUrl] = None
     asset_metadata: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
+    content: Optional[str] = None   # <-- added for texts
 
 
-# Response schema
 class AssetRead(AssetBase):
     id: int
     type: str
@@ -30,6 +27,7 @@ class AssetRead(AssetBase):
     user_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
+    content: Optional[str] = None   # <-- include in response
 
     class Config:
         orm_mode = True

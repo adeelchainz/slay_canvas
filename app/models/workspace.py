@@ -37,6 +37,8 @@ class Workspace(Base):
     # Relationships
     boards = relationship("Board", back_populates="workspace", cascade="all, delete-orphan")
     assets = relationship("Asset", back_populates="workspace", cascade="all, delete-orphan")
+    nodes = relationship("Node", back_populates="workspace", cascade="all, delete-orphan")
+    chat_messages = relationship("ChatMessage", back_populates="workspace", cascade="all, delete")
     # media_files = relationship("MediaFile", back_populates="workspace", cascade="all, delete-orphan")
 
     # Timestamps

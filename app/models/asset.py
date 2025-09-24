@@ -14,6 +14,7 @@ class Asset(Base):
     url = Column(Text, nullable=True)                  # store link (social, external, etc.)
     asset_metadata = Column(JSON, default={})                # extra info (title, tags, platform, etc.)
     is_active = Column(Boolean, default=True, nullable=False)
+    content = Column(Text, nullable=True)
 
     # Foreign keys (like MongoDB refs)
     workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -22,7 +23,8 @@ class Asset(Base):
     # Relationships
     workspace = relationship("Workspace", back_populates="assets")
     user = relationship("User", back_populates="assets")
-
+    source_nodes = relationship("Node", foreign_keys="Node.source_asset_id", back_populates="source_asset")
+    target_nodes = relationship("Node", foreign_keys="Node.target_asset_id", back_populates="target_asset")
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
